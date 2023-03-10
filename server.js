@@ -40,6 +40,7 @@ io.on('connection',(socket)=>{
                     pseudo_client : item.nickname,
                 });
             });
+            console.log("Voici les utilisateurs connectée : "+utilisateurs)
             console.table("Voici les utilisateurs connectée : "+utilisateurs.id_client + utilisateurs.pseudo_client)
             io.emit('reception_utilisateur', utilisateurs);
             console.table(utilisateurs)

@@ -17,9 +17,8 @@ socket.on('connect', () => {
     console.log("Connecté au serveur !");
 });
 
-socket.on('room', (room) => {
-    console.log("Il y'a " + room +" utilisateurs");
-    socket.room = room;
+socket.on('nom_utilisateurs', (utilisateurs) => {
+    console.log(utilisateurs+" utilisateurs");
 });
 
 socket.on('disconnect', () => {
@@ -29,7 +28,7 @@ socket.on('disconnect', () => {
 socket.on('set-pseudo',(pseudo)=>{
     console.log(pseudo + " vient de se connecter le "+new Date());
     socket.nickname = pseudo;
-  
+
 });
 
 socket.on('reception_message', (contenu) => {
@@ -55,12 +54,11 @@ function salon(id) {
     messagesElement.appendChild(message);
   });
 }
-  
+
   function check_unread() {
     var nbUnread = 0;
-  
+
     var badgeElement = document.getElementById('badge');
     badgeElement.textContent = nbUnread.toString();
     badgeElement.style.display = (nbUnread > 0) ? 'block' : 'none';
   }
-  
