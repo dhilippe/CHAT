@@ -40,25 +40,26 @@ io.on('connection',(socket)=>{
                     pseudo_client : item.nickname,
                 });
             });
-            console.log("Voici les utilisateurs connectée : "+utilisateurs)
-            console.table("Voici les utilisateurs connectée : "+utilisateurs.id_client + utilisateurs.pseudo_client)
+            utilisateurs.forEach((user) => {
+                console.log("Utilisateur connecté(s): " + user.pseudo_client + ", ID: " + user.id_client + ", - Connecté(s): " + utilisateurs.length + "");
+            });
             io.emit('reception_utilisateur', utilisateurs);
             console.table(utilisateurs)
+
         });
     });
 
 // Emission du message
     socket.on('emission_message',(message)=>{
-        io.emit('reception_message', `${socket.nickname}: ${message}`)
+        io.emit('reception_message', `${socket.nickname}: ${message}`);
         console.log(socket.nickname+": '"+message+"' le "+new Date());
+
     });
 // Deconnexion de l'utilisateur
     socket.on('disconnect',()=>{
         console.log(`${socket.nickname} s'est déconnecté à ${new Date()}.`);
     });
 });
-
-
 
 io.on('connection',(socket)=>{
     io.emit('room', Object.keys(io.sockets.sockets).length)
