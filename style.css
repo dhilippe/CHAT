@@ -4,36 +4,58 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #333;
 }
-
+#salon a{
+  color:white;
+  position:fixed;
+  top:0;
+}
     #salon {
-    background: rgba(0, 0, 0, 1);
-    position:fixed;
-    height:92%;
-    width:13%;
-    opacity:70%;
-    border-radius: 2rem;
-    left:0%;
-    bottom:30px;
+        background: rgba(0, 0, 0, 1);
+        position: fixed;
+        height: 91.5%;
+        width: 15%;
+        opacity: 70%;
+        border-radius: 2rem;
+        left: 0.5%;
+        bottom: 5.4%;
     }
 
     #salon h3{
-    z-index:40;
-    color:rgb(255, 255, 255);
-    left:15px;
-    position:fixed;
+        z-index: 40;
+        color: rgb(255, 255, 255);
+        left: 15%;
+        position: absolute;
   }
-    #form {
+  #utilisateurs {
+    color: white;
+    position: fixed;
+    top: 2.5rem;
+    margin-bottom: 1rem;
+    padding: .5rem 1rem;
+    border-radius: 1rem;
+    max-width: 50%;
+    position: relative;
+    background: #2f9d705c;
+    color: white;
+    font-size:1rem;
+    word-wrap: break-word;
+    left: 1rem;
+    list-style-type:none;
+  }
+
+
+
+  #form {
     background: rgba(0, 0, 0, 1);
     padding: 0.25rem;
     position: fixed;
-    bottom: -17;
+    bottom: -1rem;
     left: 0;
     right: 0;
     display: flex;
     height: 3rem;
     box-sizing: border-box;
-
-    }
+}
     #input {
     border: none;
     padding:0 1rem;
@@ -63,6 +85,7 @@ body {
         padding: 0;
         color:white;
         max-height:80%;
+        overflow-y: auto; /* Ajout de la propriété overflow-y */
     }
 
     #messages > li {
@@ -74,12 +97,12 @@ body {
         background:#888888;
         color:white;
         word-wrap: break-word;
-        left:200px;
-        top:10px;
+        left:17.5rem;
+        top:0.625rem;
     }
 
     #messages > li:nth-child(odd) {
-        background: #a72d2d;
+        background: #444;
 
       }
 

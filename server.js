@@ -5,16 +5,15 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const path = require("path");
-
 const PORT = 5555;
 
 server.listen(PORT, () => {
-    console.log('Serveur démarré sur le port : '+PORT);
+    console.log('Serveur démarré sur le port : ' + PORT);
 });
 
 // Route vers la page d'accueil
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname,'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Route vers le fichier client.js
@@ -28,39 +27,64 @@ app.get('/style.css', (req, res) => {
 });
 
 // L'utilisateur se connecte
-io.on('connection',(socket)=>{
-    socket.on('set-pseudo',(pseudo)=>{
-        console.log(pseudo +" vient de se connecter à "+new Date());
+io.on('connection', (socket) => {
+    socket.on('set-pseudo', (pseudo) => {
+        console.log(pseudo + " vient de se connecter à " + new Date());
         socket.nickname = pseudo;
-        io.fetchSockets().then((room)=>{
-            var utilisateurs=[];
-            room.forEach((item) => {
-                utilisateurs.push({
-                    id_client : item.id,
-                    pseudo_client : item.nickname,
-                });
-            });
-            utilisateurs.forEach((user) => {
-                console.log("Utilisateur connecté(s): " + user.pseudo_client + ", ID: " + user.id_client + ", - Connecté(s): " + utilisateurs.length + "");
-            });
-            io.emit('reception_utilisateur', utilisateurs);
-            console.table(utilisateurs)
-
-        });
+        const utilisateurs = getUsers(io);
+        console.table(utilisateurs);
+        io.emit('reception_utilisateur', utilisateurs);
     });
 
-// Emission du message
-    socket.on('emission_message',(message)=>{
+    // Emission du message
+    socket.on('emission_message', (message) => {
         io.emit('reception_message', `${socket.nickname}: ${message}`);
-        console.log(socket.nickname+": '"+message+"' le "+new Date());
+        console.log(socket.nickname + ": '" + message + "' le " + new Date());
+    });
+
+    // Deconnexion de l'utilisateur
+    socket.on('disconnect', () => {
+        console.log(`${socket.nickname} s'est déconnecté à ${new Date()}.`);
+
 
     });
-// Deconnexion de l'utilisateur
-    socket.on('disconnect',()=>{
-        console.log(`${socket.nickname} s'est déconnecté à ${new Date()}.`);
-    });
+
+    io.emit('room', Object.keys(io.sockets.sockets).length);
 });
 
-io.on('connection',(socket)=>{
-    io.emit('room', Object.keys(io.sockets.sockets).length)
+
+function getUsers(io) {
+    const utilisateurs = [];
+    io.sockets.sockets.forEach((socket) => {
+        if (socket.nickname) {
+            utilisateurs.push({
+                id_client: socket.id,
+                pseudo_client: socket.nickname,
+            });
+        }
+    });
+    return utilisateurs;
+}
+
+const connectedUsers = new Set();
+
+io.on('connection', (socket) => {
+  // Ajouter l'utilisateur connecté à la liste des utilisateurs connectés
+  connectedUsers.add(socket.id);
+  io.emit('update_users_count', Object.keys(io.sockets.sockets).length);
+  // Envoyer la liste des utilisateurs connectés à tous les clients
+
+  io.emit('connectedUsers', Array.from(connectedUsers));
+
+  // Gérer la déconnexion de l'utilisateur
+  socket.on('disconnect', () => {
+    // Supprimer l'utilisateur déconnecté de la liste des utilisateurs connectés
+    connectedUsers.delete(socket.id);
+
+    // Envoyer la liste des utilisateurs connectés mise à jour à tous les clients
+    io.emit('connectedUsers', Array.from(connectedUsers));
+
+
+
+  });
 });

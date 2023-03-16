@@ -6,16 +6,20 @@ var messages = document.getElementById('messages');
 var form = document.getElementById('form');
 var input = document.getElementById('input');
 var numUtilisateurs = document.querySelector('#utilisateurs'); // ici, il faut sélectionner l'élément HTML qui a l'id "utilisateurs"
+const listeUtilisateurs = document.getElementById("utilisateurs");
+
 
 form.addEventListener('submit', (e) => {
   e.preventDefault(); // Empêche la page de se recharger
   socket.emit('emission_message', input.value);
   input.value = ''; // Efface le champ de saisie
+
 });
 
 socket.on('connect', () => {
   console.log("Connecté au serveur !");
 });
+
 
 socket.on('room', (room) => {
   console.log("Il y a " + room + " utilisateurs");
@@ -64,7 +68,20 @@ socket.on('join-room', (room) => {
 // Envoyer un message à tous les utilisateurs du salon
 socket.on('message', (message) => {
   io.in(room).emit('message', message);
+
 });
+
+// Ajouter un utilisateur
+socket.on('set-pseudo', (pseudo) => {
+  socket.nickname = pseudo;
+  $('#utilisateurs').append(`<li>${pseudo}</li>`);
+});
+
+// Retirer un utilisateur
+socket.on('disconnect', () => {
+  $('#utilisateurs').find(`li:contains(${socket.nickname})`).remove();
+});
+
 
 var id_salon = 'salon';
 var lesMessages = [];
@@ -91,3 +108,10 @@ function check_unread() {
   badgeElement.textContent = nbUnread.toString();
   badgeElement.style.display = (nbUnread > 0) ? 'block' : 'none';
 }
+
+const nbUsersElement = document.createElement('span');
+document.querySelector('#salon h3').appendChild(nbUsersElement);
+
+socket.on('update_users_count', (count) => {
+  nbUsersElement.innerText = ` (${count})`;
+});
