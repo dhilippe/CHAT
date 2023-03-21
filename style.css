@@ -4,20 +4,16 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: #333;
 }
-#salon a{
-  color:white;
-  position:fixed;
-  top:0;
-}
+
     #salon {
         background: rgba(0, 0, 0, 1);
         position: fixed;
-        height: 91.5%;
+        height: 92%;
         width: 15%;
         opacity: 70%;
         border-radius: 2rem;
         left: 0.5%;
-        bottom: 5.4%;
+        bottom: 7%;
     }
 
     #salon h3{
@@ -42,9 +38,6 @@ body {
     left: 1rem;
     list-style-type:none;
   }
-
-
-
   #form {
     background: rgba(0, 0, 0, 1);
     padding: 0.25rem;

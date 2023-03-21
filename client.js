@@ -1,6 +1,9 @@
 var socket = io();
 
-socket.emit('set-pseudo', prompt("Pseudo ?"));
+var pseudo = prompt("Pseudo ?")
+var chat_select = 'general'
+var lesMessages = []
+socket.emit('set-pseudo');
 
 var messages = document.getElementById('messages');
 var form = document.getElementById('form');
@@ -11,7 +14,12 @@ const listeUtilisateurs = document.getElementById("utilisateurs");
 
 form.addEventListener('submit', (e) => {
   e.preventDefault(); // Empêche la page de se recharger
-  socket.emit('emission_message', input.value);
+  let Message = {
+    emeteur: pseudo,
+    dest: chat_select,
+    content: input.value
+  }
+  socket.emit('emission_message', Message);
   input.value = ''; // Efface le champ de saisie
 
 });
@@ -42,17 +50,31 @@ socket.on('reception_utilisateur', (utilisateurs) => {
   var userList = document.querySelector('#utilisateurs'); // ici, il faut sélectionner l'élément HTML qui a l'id "utilisateurs"
   userList.innerHTML = '';
 
-  utilisateurs.forEach(function(user) {
+  utilisateurs.forEach(function (user) {
     var li = document.createElement('li');
     li.textContent = user.pseudo_client;
     userList.appendChild(li);
   });
 });
 
-socket.on('reception_message', (contenu) => {
+socket.on('reception_message', (mes) => {
   var message = document.createElement('li');
-  message.textContent = contenu;
-  messages.appendChild(message);
+  messages.innerHTML = "";
+  lesMessages.push(mes)
+  lesMessages.forEach(element => {
+    if (element.emeteur === pseudo && element.dest === chat_select) {
+      message.classList.add("envoye")
+      message.innerHTML = element.content
+      messages.appendChild(text);
+      console.log("message envoyé")
+    } else if (element.emeteur === chat_select && element.dest === 'general') {
+      message.classList.add("general")
+      message.innerHTML = element.content
+      messages.appendChild(text);
+      console.log("message general")
+    }
+  });
+
 });
 
 // Créer un salon de discussion
@@ -87,14 +109,14 @@ var id_salon = 'salon';
 var lesMessages = [];
 
 function salon(id) {
-  var messages = lesMessages.filter(function(m) {
+  var messages = lesMessages.filter(function (m) {
     return m.salon === id;
   });
 
   var messagesElement = document.getElementById('messages');
   messagesElement.innerHTML = '';
 
-  messages.forEach(function(m) {
+  messages.forEach(function (m) {
     var message = document.createElement('li');
     message.textContent = m.contenu;
     messagesElement.appendChild(message);
