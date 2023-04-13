@@ -6,15 +6,88 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const path = require("path");
 const PORT = 5555;
+let infoUtilisateur;
+let utilisateurconnecter ="";
+
+const session = require('express-session')
+
+const mariadb = require ("mariadb");
+const { connect } =require('http2');
+const db = mariadb.createPool({
+  host:'localhost',
+  user:'root',
+  password:'root',
+  database:'siochat'
+})
+
+
+async function getUser(username, password) {
+  let conn;
+  try{
+    conn = await db.getConnection();
+    const rows = await conn.query("SELECT * FROM user WHERE Name = ? AND mdp = ?",[username, password]);
+    return rows.length > 0 ? rows[0] : null;
+  }catch (err){
+      console.log("erreur : "+err);
+      return null;
+  }finally{
+    if (conn) conn.release();
+  }
+
+}
+
+const connectedUsers = new Set();
 
 server.listen(PORT, () => {
   console.log('Serveur démarré sur le port : ' + PORT);
 });
 
+
+app.use(session({
+    secret: 'secret',
+    resave: true,
+    saveUninitialized: true
+}))
+
+app.use(express.json());
+app.use(express.urlencoded({extended:true}));
+
+const bodyParser = require('body-parser');
+
+app.use(bodyParser.urlencoded({ extended : true }));
+
+
+app.post('/login',async (req,res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const user = await getUser(username, password);
+  if(user){
+    infoUtilisateur = {
+      pseudo: username,
+      mail: user.mail
+    };
+    utilisateurconnecter = infoUtilisateur.pseudo;
+    req.session.loggedin =true;
+
+    res.redirect("/acceuil");
+  }else{
+    res.redirect("/erreur");
+  }
+});
+
 // Route vers la page d'accueil
 app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'connexion.html'));
+});
+
+app.get('/acceuil', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+app.get('/erreur', (req, res) => {
+  res.sendFile(path.join(__dirname, 'error.html'));
+});
+
 
 // Route vers le fichier client.js
 app.get('/client.js', (req, res) => {
@@ -28,19 +101,53 @@ app.get('/style.css', (req, res) => {
 
 // L'utilisateur se connecte
 io.on('connection', (socket) => {
+  socket.nickname = utilisateurconnecter
+  io.fetchSockets().then((room) => {
+    var utilisateurs=[];
+    room.forEach((item) => {
+       utilisateurs.push({
+        id_client: item.id,
+        pseudo_client: item.nickname,
+
+      });
+  });
+  io.emit('reception_utilisateur', utilisateurs);
+  console.table(utilisateurs);
+  /*socket.nickname=utilisateurconnecter;
+  // Ajouter l'utilisateur connecté à la liste des utilisateurs connectés
+  connectedUsers.add(socket.id);
+  io.emit('update_users_count', Object.keys(io.sockets.sockets).length);
+  // Envoyer la liste des utilisateurs connectés à tous les clients
+  io.emit('connectedUsers', Array.from(connectedUsers));
+
   socket.on('set-pseudo', (pseudo) => {
-    console.log(pseudo + " vient de se connecter à " + new Date());
-    socket.nickname = pseudo;
+    // Vérifier si le pseudo est vide
+    if (!pseudo) {
+      pseudo = 'User';
+    }
+    // Vérifier si le pseudo existe déjà
+    let count = 1;
+    let newPseudo = pseudo;
+    while (connectedUsers.has(newPseudo)) {
+      count++;
+      newPseudo = `${pseudo}${count}`;
+    }
+    // Attribuer le nouveau pseudo
+    socket.nickname=utilisateurconnecter;
+    connectedUsers.add(newPseudo);
+    console.log(`${newPseudo} vient de se connecter à ${new Date()}`);
     const utilisateurs = getUsers(io);
     console.table(utilisateurs);
     io.emit('reception_utilisateur', utilisateurs);
+    io.emit('update_users_count', Object.keys(io.sockets.sockets).length);
+    io.emit('connectedUsers', Array.from(connectedUsers));*/
   });
 
   // Emission du message
   socket.on('emission_message', (message) => {
+    console.log(message)
     socket.broadcast.emit('reception_message', message)
     socket.emit('reception_message', message);
-    console.log(socket.nickname + ": '" + message.content + "' le " + new Date());
   });
 
   // Deconnexion de l'utilisateur
@@ -49,6 +156,8 @@ io.on('connection', (socket) => {
     const utilisateurs = getUsers(io);
     console.table(utilisateurs);
     io.emit('reception_utilisateur', utilisateurs);
+    connectedUsers.delete(socket.id);
+    io.emit('connectedUsers', Array.from(connectedUsers));
   });
 
   io.emit('room', Object.keys(io.sockets.sockets).length);
@@ -63,26 +172,12 @@ function getUsers(io) {
         id_client: socket.id,
         pseudo_client: socket.nickname,
       });
+    } else {
+      utilisateurs.push({
+        id_client: socket.id,
+        pseudo_client: 'Pseudo vide ou non défini',
+      });
     }
   });
   return utilisateurs;
 }
-
-const connectedUsers = new Set();
-
-io.on('connection', (socket) => {
-  // Ajouter l'utilisateur connecté à la liste des utilisateurs connectés
-  connectedUsers.add(socket.id);
-  io.emit('update_users_count', Object.keys(io.sockets.sockets).length);
-  // Envoyer la liste des utilisateurs connectés à tous les clients
-  io.emit('connectedUsers', Array.from(connectedUsers));
-
-  // Gérer la déconnexion de l'utilisateur
-  socket.on('disconnect', () => {
-    // Supprimer l'utilisateur déconnecté de la liste des utilisateurs connectés
-    connectedUsers.delete(socket.id);
-
-    // Envoyer la liste des utilisateurs connectés mise à jour à tous les clients
-    io.emit('connectedUsers', Array.from(connectedUsers));
-  });
-});

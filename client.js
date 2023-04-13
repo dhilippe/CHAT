@@ -1,114 +1,87 @@
 var socket = io();
 
-var pseudo = prompt("Pseudo ?")
-var chat_select = 'general'
+
+var chat_select = 'general';
 var lesMessages = []
-socket.emit('set-pseudo');
-
+var salonEnCours = document.getElementById('salon-en-cours')
+var pseudo;
+(async() => {
+  pseudo = await socket.nickname
+})();
 var messages = document.getElementById('messages');
-var form = document.getElementById('form');
+var button = document.getElementById('button');
 var input = document.getElementById('input');
-var numUtilisateurs = document.querySelector('#utilisateurs'); // ici, il faut sélectionner l'élément HTML qui a l'id "utilisateurs"
-const listeUtilisateurs = document.getElementById("utilisateurs");
+var numUtilisateurs = document.querySelector('#utilisateurs');
+var listeUtilisateurs = document.getElementById("utilisateurs");
 
-
-form.addEventListener('submit', (e) => {
-  e.preventDefault(); // Empêche la page de se recharger
-  let Message = {
-    emeteur: pseudo,
+button.addEventListener('click', () => {
+  let message = {
+    emeteur: pseudo,  // Ajouter le pseudo dans l'objet de message
     dest: chat_select,
-    content: input.value
+    content: input.value,
+    date: new Date()
   }
-  socket.emit('emission_message', Message);
+  socket.emit('emission_message', message);
   input.value = ''; // Efface le champ de saisie
-
 });
 
 socket.on('connect', () => {
   console.log("Connecté au serveur !");
 });
 
-
 socket.on('room', (room) => {
-  console.log("Il y a " + room + " utilisateurs");
   socket.room = room;
 });
 
 socket.on('disconnect', () => {
-  console.log("Déconnecté du serveur !");
-});
-
-socket.on('set-pseudo', (pseudo) => {
-  console.log(pseudo + " vient de se connecter le " + new Date());
-  socket.nickname = pseudo;
+  $('#utilisateurs').find(`li:contains(${socket.nickname})`).remove();
 });
 
 socket.on('reception_utilisateur', (utilisateurs) => {
   var nbUtilisateurs = utilisateurs.length;
   numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
-
-  var userList = document.querySelector('#utilisateurs'); // ici, il faut sélectionner l'élément HTML qui a l'id "utilisateurs"
-  userList.innerHTML = '';
-
+  var userList = document.querySelector('#utilisateurs');
+  userList.innerHTML = `<button class="button-user id="button-user" onclick="salon('general')">General</button>`;
   utilisateurs.forEach(function (user) {
     var li = document.createElement('li');
-    li.textContent = user.pseudo_client;
+    li.innerHTML = `<button class="button-user id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}</button>`;
     userList.appendChild(li);
   });
 });
 
 socket.on('reception_message', (mes) => {
-  var message = document.createElement('li');
+  lesMessages.push(mes);
+  console.log(mes)
   messages.innerHTML = "";
-  lesMessages.push(mes)
   lesMessages.forEach(element => {
+    var message = document.createElement("li");
     if (element.emeteur === pseudo && element.dest === chat_select) {
-      message.classList.add("envoye")
-      message.innerHTML = element.content
-      messages.appendChild(text);
-      console.log("message envoyé")
-    } else if (element.emeteur === chat_select && element.dest === 'general') {
-      message.classList.add("general")
-      message.innerHTML = element.content
-      messages.appendChild(text);
-      console.log("message general")
+      message.classList.add("envoye");
+      console.log(element.emeteur);
+      message.innerHTML = `
+      <p class='recepteur'>${element.dest}</p>
+      <p class='pseudo-envoi'>${element.emeteur}</p>
+      <p class='contenu'>${element.content}</p>
+      <p class='date'>${element.date}</p>`;
+    }else if (element.emeteur === chat_select && element.dest === pseudo){
+      message.classList.add("recu");
+      message.innerHTML = `
+      <p class='pseudo-envoi'>${element.emeteur}</p>
+      <p class='contenu'>${element.content}</p>
+      <p class='date'>${element.date}</p>`;
+    }else if (element.emeteur === chat_select && element.dest === 'general') {
+      message.classList.add("recu");
+      message.innerHTML = `
+      <p class='pseudo-envoi'>${element.emeteur}</p>
+      <p class='contenu'>${element.content}</p>
+      <p class='date'>${element.date}</p>`
     }
+    messages.appendChild(message);
   });
-
 });
-
-// Créer un salon de discussion
-socket.on('create-room', (room) => {
-  socket.join(room);
-});
-
-// Rejoindre un salon de discussion
-socket.on('join-room', (room) => {
-  socket.join(room);
-});
-
-// Envoyer un message à tous les utilisateurs du salon
-socket.on('message', (message) => {
-  io.in(room).emit('message', message);
-
-});
-
-// Ajouter un utilisateur
-socket.on('set-pseudo', (pseudo) => {
-  socket.nickname = pseudo;
-  $('#utilisateurs').append(`<li>${pseudo}</li>`);
-});
-
-// Retirer un utilisateur
-socket.on('disconnect', () => {
-  $('#utilisateurs').find(`li:contains(${socket.nickname})`).remove();
-});
-
-
-var id_salon = 'salon';
-var lesMessages = [];
 
 function salon(id) {
+  salonEnCours.innerHTML = id
   var messages = lesMessages.filter(function (m) {
     return m.salon === id;
   });
@@ -132,7 +105,7 @@ function check_unread() {
 }
 
 const nbUsersElement = document.createElement('span');
-document.querySelector('#salon h3').appendChild(nbUsersElement);
+document.querySelector('salon h3').appendChild(nbUsersElement);
 
 socket.on('update_users_count', (count) => {
   nbUsersElement.innerText = ` (${count})`;
