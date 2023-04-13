@@ -1,13 +1,17 @@
+// Connectez le client au serveur en créant un socket
 var socket = io();
 
-
+// Initialise les variables nécessaires
 var chat_select = 'general';
-var lesMessages = []
-var salonEnCours = document.getElementById('salon-en-cours')
+var lesMessages = [];
+var salonEnCours = document.getElementById('salon-en-cours');
 var pseudo;
-(async() => {
-  pseudo = await socket.nickname
+
+// Récupère le pseudonyme de l'utilisateur via le socket
+(async () => {
+pseudo = await socket.nickname;
 })();
+
 var messages = document.getElementById('messages');
 var button = document.getElementById('button');
 var input = document.getElementById('input');
@@ -15,37 +19,43 @@ var numUtilisateurs = document.querySelector('#utilisateurs');
 var listeUtilisateurs = document.getElementById("utilisateurs");
 var pseudoa = "";
 
+// Ajoute un événement de clic au bouton d'envoi de message
 button.addEventListener('click', () => {
-  let message = {
-    emeteur: pseudo,  // Ajouter le pseudo dans l'objet de message
-    dest: chat_select,
-    content: input.value,
-    date: new Date(),
-    pseudo: pseudoa
-
-  }
-  socket.emit('emission_message', message);
-  input.value = ''; // Efface le champ de saisie
+let message = {
+emeteur: pseudo, // Ajouter le pseudo dans l'objet de message
+dest: chat_select,
+content: input.value,
+date: new Date(),
+pseudo: pseudoa
+};
+// Émet le message via le socket
+socket.emit('emission_message', message);
+input.value = ''; // Efface le champ de saisie
 });
 
+// Gère l'événement de connexion au serveur
 socket.on('connect', () => {
-  console.log("Connecté au serveur !");
+console.log("Connecté au serveur !");
 });
 
+// Récupère la room dans laquelle se trouve l'utilisateur
 socket.on('room', (room) => {
-  socket.room = room;
+socket.room = room;
 });
 
+// Gère l'événement de déconnexion du serveur
 socket.on('disconnect', () => {
-  $('#utilisateurs').find(`li:contains(${socket.nickname})`).remove();
+// Supprime l'utilisateur de la liste des utilisateurs connectés
+$('#utilisateurs').find(li:contains(${socket.nickname})).remove();
 });
 
+// Met à jour la liste des utilisateurs connectés
 socket.on('reception_utilisateur', (utilisateurs) => {
-  var nbUtilisateurs = utilisateurs.length;
-  numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
-  var userList = document.querySelector('#utilisateurs');
-  userList.innerHTML = `<button class="button-user id="button-user" onclick="salon('general')">General</button>`;
-  utilisateurs.forEach(function (user) {
+var nbUtilisateurs = utilisateurs.length;
+numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
+var userList = document.querySelector('#utilisateurs');
+userList.innerHTML = <button class="button-user id="button-user" onclick="salon('general')">General</button>;
+utilisateurs.forEach(function (user) {
 
     pseudoa= user.pseudo_client;
     var li = document.createElement('li');
@@ -54,6 +64,7 @@ socket.on('reception_utilisateur', (utilisateurs) => {
   });
 });
 
+// Gère la réception de messages
 socket.on('reception_message', (mes) => {
   lesMessages.push(mes);
   console.log(mes)
@@ -85,15 +96,21 @@ socket.on('reception_message', (mes) => {
   });
 });
 
+// fonction salon qui permet d'afficher les messages d'un salon spécifique
 function salon(id) {
-  salonEnCours.innerHTML = id
+  // met à jour le titre du salon en cours
+  salonEnCours.innerHTML = id;
+
+  // filtre les messages du salon spécifique
   var messages = lesMessages.filter(function (m) {
     return m.salon === id;
   });
 
+  // récupère l'élément HTML où les messages seront affichés et vide son contenu
   var messagesElement = document.getElementById('messages');
   messagesElement.innerHTML = '';
 
+  // pour chaque message, crée un élément HTML li et affiche son contenu dans le salon
   messages.forEach(function (m) {
     var message = document.createElement('li');
     message.textContent = m.contenu;
@@ -101,17 +118,26 @@ function salon(id) {
   });
 }
 
+// fonction check_unread qui met à jour le badge affichant le nombre de messages non lus
 function check_unread() {
+  // initialise le nombre de messages non lus à 0
   var nbUnread = 0;
 
+  // récupère l'élément HTML du badge et met à jour son contenu
   var badgeElement = document.getElementById('badge');
   badgeElement.textContent = nbUnread.toString();
+
+  // affiche ou masque le badge en fonction du nombre de messages non lus
   badgeElement.style.display = (nbUnread > 0) ? 'block' : 'none';
 }
 
+// création d'un élément HTML span pour afficher le nombre d'utilisateurs dans le salon
 const nbUsersElement = document.createElement('span');
+
+// sélectionne l'élément HTML où le nombre d'utilisateurs sera affiché et ajoute l'élément HTML créé
 document.querySelector('salon h3').appendChild(nbUsersElement);
 
+// écouteur d'événements qui met à jour le nombre d'utilisateurs dans le salon
 socket.on('update_users_count', (count) => {
   nbUsersElement.innerText = ` (${count})`;
 });
