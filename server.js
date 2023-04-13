@@ -9,8 +9,8 @@ const PORT = 5555;
 let infoUtilisateur;
 let utilisateurconnecter ="";
 
+// connexion à la base de données MariaDB
 const session = require('express-session')
-
 const mariadb = require ("mariadb");
 const { connect } =require('http2');
 const db = mariadb.createPool({
@@ -20,7 +20,7 @@ const db = mariadb.createPool({
   database:'siochat'
 })
 
-
+// fonction pour récupérer les informations utilisateur depuis la base de données
 async function getUser(username, password) {
   let conn;
   try{
@@ -42,13 +42,14 @@ server.listen(PORT, () => {
   console.log('Serveur démarré sur le port : ' + PORT);
 });
 
-
+// initialisation de la session
 app.use(session({
     secret: 'secret',
     resave: true,
     saveUninitialized: true
 }))
 
+// middleware pour analyser le corps de la requête en tant que JSON
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 
@@ -56,7 +57,7 @@ const bodyParser = require('body-parser');
 
 app.use(bodyParser.urlencoded({ extended : true }));
 
-
+// route pour la connexion de l'utilisateur
 app.post('/login',async (req,res) => {
   const username = req.body.username;
   const password = req.body.password;
@@ -80,10 +81,12 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'connexion.html'));
 });
 
+// route pour la page d'accueil de l'utilisateur connecté
 app.get('/acceuil', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// route pour la page d'erreur
 app.get('/erreur', (req, res) => {
   res.sendFile(path.join(__dirname, 'error.html'));
 });
@@ -163,7 +166,7 @@ io.on('connection', (socket) => {
   io.emit('room', Object.keys(io.sockets.sockets).length);
 });
 
-
+// Retourne un tableau d'objets avec l'id et pseudo de chaque client connecté sur Socket.io
 function getUsers(io) {
   const utilisateurs = [];
   io.sockets.sockets.forEach((socket) => {
