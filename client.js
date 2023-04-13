@@ -13,13 +13,16 @@ var button = document.getElementById('button');
 var input = document.getElementById('input');
 var numUtilisateurs = document.querySelector('#utilisateurs');
 var listeUtilisateurs = document.getElementById("utilisateurs");
+var pseudoa = "";
 
 button.addEventListener('click', () => {
   let message = {
     emeteur: pseudo,  // Ajouter le pseudo dans l'objet de message
     dest: chat_select,
     content: input.value,
-    date: new Date()
+    date: new Date(),
+    pseudo: pseudoa
+
   }
   socket.emit('emission_message', message);
   input.value = ''; // Efface le champ de saisie
@@ -43,6 +46,8 @@ socket.on('reception_utilisateur', (utilisateurs) => {
   var userList = document.querySelector('#utilisateurs');
   userList.innerHTML = `<button class="button-user id="button-user" onclick="salon('general')">General</button>`;
   utilisateurs.forEach(function (user) {
+
+    pseudoa= user.pseudo_client;
     var li = document.createElement('li');
     li.innerHTML = `<button class="button-user id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}</button>`;
     userList.appendChild(li);
@@ -56,11 +61,11 @@ socket.on('reception_message', (mes) => {
   lesMessages.forEach(element => {
     var message = document.createElement("li");
     if (element.emeteur === pseudo && element.dest === chat_select) {
+      console.log("d"+JSON.stringify(element))
       message.classList.add("envoye");
       console.log(element.emeteur);
       message.innerHTML = `
-      <p class='recepteur'>${element.dest}</p>
-      <p class='pseudo-envoi'>${element.emeteur}</p>
+      <p class='pseudo-envoi'>${element.pseudo}</p>
       <p class='contenu'>${element.content}</p>
       <p class='date'>${element.date}</p>`;
     }else if (element.emeteur === chat_select && element.dest === pseudo){
