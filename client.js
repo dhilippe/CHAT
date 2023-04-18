@@ -56,29 +56,36 @@ socket.on('disconnect', () => {
 
 // Met à jour la liste des utilisateurs connectés
 socket.on('reception_utilisateur', (utilisateurs) => {
+
   var nbUtilisateurs = utilisateurs.length;
+
   numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
   const userList = document.querySelector('#utilisateurs');
   userList.innerHTML="";
-  userList.innerHTML = '<button class="button-user" id="button-user" onclick="salon(\'general\')">General</button>';
 
+  userList.innerHTML = '<button class="button-user" id="button-user" onclick="salon(\'general\')">General</button>';
+//source du problème
 
 
   utilisateurs.forEach(( (user) => {
 
-
-    if(user.id !== socket.id && user.pseudo_client !=null && user.pseudo_client != undefined){
+    // Si c'est lui
+    if(user.id_client !== socket.id && user.pseudo_client !=null && user.pseudo_client != undefined){
 
       var li2 = document.createElement('li');
       li2.innerHTML = `<button class="button-user" id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}</button>`;
       userList.appendChild(li2);
     }
-
-    if (user.id_client == socket.id) {
-      pseudoa = user.pseudo_client;
+      // Si l'utilisateur n'est pas lui même
+      else {
+     pseudoa = user.pseudo_client;
       var li = document.createElement('li');
       li.innerHTML = `<button class="button-user" id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}(you) </button>`;
+      li.addEventListener("click", ()=>{
+        salon(pseudoa)
+      })
       userList.appendChild(li);
+
     }
 
 
@@ -91,14 +98,14 @@ socket.on('reception_utilisateur', (utilisateurs) => {
 // Gère la réception de messages
 socket.on('reception_message', (mes) => {
   lesMessages.push(mes);
-  console.log(mes);
+ // console.log(mes);
   messages.innerHTML = "";
   lesMessages.forEach(element => {
     var message = document.createElement("li");
     if (element.emetteur === pseudo && element.dest === chat_select) {
-      console.log("d" + JSON.stringify(element));
+      //console.log("d" + JSON.stringify(element));
       message.classList.add("envoye");
-      console.log(element.emetteur);
+      //console.log(element.emetteur);
       message.innerHTML = `
         <p class='pseudo-envoi'>${element.pseudo}</p>
         <p class='contenu'>${element.content}</p>
@@ -126,7 +133,7 @@ socket.on('reception_message', (mes) => {
     messages.appendChild(message);
   });
 });
-
+// var pseudo = prompt('Quel est votre pseudo ?'); // Demande du pseudo + envoie au serveur
 // fonction salon qui permet d'afficher les messages d'un salon spécifique
 function salon(id) {
 
@@ -135,20 +142,22 @@ function salon(id) {
   salonEnCours.innerHTML = id;
 
   // met à jour le nom du salon
-
-  document.getElementById('nom-salon').innerHTML = id;
-
+  document.getElementById('salon-en-cours').innerHTML = id;
+  console.log(id)
   // vide le contenu des messages
   messages.innerHTML = '';
-
   // boucle à travers les messages et crée un élément div pour chaque message
   for(const contenu of lesMessages){
+    console.log(contenu)
   if(
     (contenu.dest_id == id && id == 'general') ||
     (contenu.emet_id == socket.id && contenu.dest_id == socket.id) ||
     (contenu.emet_id == socket.id && contenu.dest_id == id)
   ){
     var div = document.createElement('div');
+    console.log(contenu.dest_id)
+    console.log(socket.id)
+    console.log(id)
     if(contenu.emet_id == socket.id){
       div.setAttribute('class', 'message-emis');
     }else{
@@ -156,51 +165,16 @@ function salon(id) {
     }
     div.innerHTML = contenu.contenu;
     messages.appendChild(div);
+  }else{
+    console.log("pas bon")
   }
-  function salon(id) {
 
-  // met à jour le titre du salon en cours
-
-  salonEnCours.innerHTML = id;
-
-  // met à jour le nom du salon
-
-  document.getElementById('nom-salon').innerHTML = id;
-
-  // vide le contenu des messages
-  messages.innerHTML = '';
-
-  // boucle à travers les messages et crée un élément div pour chaque message
-  for(const contenu of lesMessages){
-
-
-  if(
-    (contenu.dest_id == id && id == 'general') ||
-    (contenu.emet_id == socket.id && contenu.dest_id == socket.id) ||
-    (contenu.emet_id == socket.id && contenu.dest_id == id)
-  ){
-    var div = document.createElement('div');
-    if(contenu.emet_id == socket.id){
-      div.setAttribute('class', 'message-emis');
-    }else{
-      div.setAttribute('class', 'message-recu');
-    }
-    div.innerHTML = contenu.contenu;
-    messages.appendChild(div);
-  }
-}
-  }
 
   // filtre les messages du salon spécifique
   var messages = lesMessages.filter(function (m) {
   return m.salon === id;
   });
   }
-
-  // filtre les messages du salon spécifique
-  var messages = lesMessages.filter(function (m) {
-    return m.salon === id;
-  });
 
   // récupère l'élément HTML où les messages seront affichés et vide son contenu
   var messagesElement = document.getElementById('messages');

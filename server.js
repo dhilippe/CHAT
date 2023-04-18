@@ -163,6 +163,7 @@ io.on('connection', (socket) => {
   });
 
   io.emit('room', Object.keys(io.sockets.sockets).length);
+
 });
 
 // Retourne un tableau d'objets avec l'id et pseudo de chaque client connecté sur Socket.io
