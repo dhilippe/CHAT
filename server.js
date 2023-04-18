@@ -122,7 +122,6 @@ io.on('connection', (socket) => {
   io.emit('update_users_count', Object.keys(io.sockets.sockets).length);
   // Envoyer la liste des utilisateurs connectés à tous les clients
   io.emit('connectedUsers', Array.from(connectedUsers));
-
   socket.on('set-pseudo', (pseudo) => {
     // Vérifier si le pseudo est vide
     if (!pseudo) {
