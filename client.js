@@ -9,7 +9,7 @@ var pseudo;
 
 // Récupère le pseudonyme de l'utilisateur via le socket
 (async () => {
-pseudo = await socket.nickname;
+  pseudo = await socket.nickname();
 })();
 
 var messages = document.getElementById('messages');
@@ -17,67 +17,98 @@ var button = document.getElementById('button');
 var input = document.getElementById('input');
 var numUtilisateurs = document.querySelector('#utilisateurs');
 var listeUtilisateurs = document.getElementById("utilisateurs");
+var bloquer = document.getElementById("bloquer");
 var pseudoa = "";
 
 // Ajoute un événement de clic au bouton d'envoi de message
-button.addEventListener('click', () => {
-let message = {
-emeteur: pseudo, // Ajouter le pseudo dans l'objet de message
-dest: chat_select,
-content: input.value,
-date: new Date(),
-pseudo: pseudoa
-};
-// Émet le message via le socket
-socket.emit('emission_message', message);
-input.value = ''; // Efface le champ de saisie
+button.addEventListener('click', (e) => {
+  e.preventDefault()
+  let message = {
+    emetteur: pseudo, // Ajouter le pseudo dans l'objet de message
+    dest: chat_select,
+    content: input.value,
+    date: new Date(),
+    pseudo: pseudoa
+  };
+  // Émet le message via le socket
+  socket.emit('emission_message', message);
+  input.value = ''; // Efface le champ de saisie
 });
+
+
+
 
 // Gère l'événement de connexion au serveur
 socket.on('connect', () => {
-console.log("Connecté au serveur !");
+  console.log("Connecté au serveur !");
 });
 
 // Récupère la room dans laquelle se trouve l'utilisateur
 socket.on('room', (room) => {
-socket.room = room;
+  socket.room = room;
 });
 
 // Gère l'événement de déconnexion du serveur
 socket.on('disconnect', () => {
-// Supprime l'utilisateur de la liste des utilisateurs connectés
-$('#utilisateurs').find(li:contains(${socket.nickname})).remove();
+  // Supprime l'utilisateur de la liste des utilisateurs connectés
+  $('#utilisateurs').find(`li:contains(${socket.nickname()})`).remove();
 });
 
 // Met à jour la liste des utilisateurs connectés
 socket.on('reception_utilisateur', (utilisateurs) => {
-var nbUtilisateurs = utilisateurs.length;
-numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
-var userList = document.querySelector('#utilisateurs');
-userList.innerHTML = <button class="button-user id="button-user" onclick="salon('general')">General</button>;
-utilisateurs.forEach(function (user) {
+  var nbUtilisateurs = utilisateurs.length;
+  numUtilisateurs.textContent = "Il y a " + nbUtilisateurs + " utilisateur(s) connecté(s).";
+  const userList = document.querySelector('#utilisateurs');
+  userList.innerHTML="";
+  userList.innerHTML = '<button class="button-user" id="button-user" onclick="salon(\'general\')">General</button>';
 
-    pseudoa= user.pseudo_client;
-    var li = document.createElement('li');
-    li.innerHTML = `<button class="button-user id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}</button>`;
-    userList.appendChild(li);
-  });
+
+
+  utilisateurs.forEach(( (user) => {
+
+
+    if(user.id !== socket.id && user.pseudo_client !=null && user.pseudo_client != undefined){
+
+      var li2 = document.createElement('li');
+      li2.innerHTML = `<button class="button-user" id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}</button>`;
+      userList.appendChild(li2);
+    }
+
+    if (user.id_client == socket.id) {
+      pseudoa = user.pseudo_client;
+      var li = document.createElement('li');
+      li.innerHTML = `<button class="button-user" id="button-user" onclick="salon('${user.pseudo_client}')">${user.pseudo_client}(you) </button>`;
+      userList.appendChild(li);
+    }
+
+
+
+
+
+  }));
 });
 
 // Gère la réception de messages
 socket.on('reception_message', (mes) => {
   lesMessages.push(mes);
-  console.log(mes)
+  console.log(mes);
   messages.innerHTML = "";
   lesMessages.forEach(element => {
     var message = document.createElement("li");
-    if (element.emeteur === pseudo && element.dest === chat_select) {
-      console.log("d"+JSON.stringify(element))
+    if (element.emetteur === pseudo && element.dest === chat_select) {
+      console.log("d" + JSON.stringify(element));
       message.classList.add("envoye");
-      console.log(element.emeteur);
+      console.log(element.emetteur);
       message.innerHTML = `
-      <p class='pseudo-envoi'>${element.pseudo}</p>
-      <p class='contenu'>${element.content}</p>
+        <p class='pseudo-envoi'>${element.pseudo}</p>
+        <p class='contenu'>${element.content}</p>
+        <p class='date'>${element.date}</p>
+      `;
+    } else if (element.emetteur === chat_select && element.dest === pseudo) {
+      message.classList.add("recu");
+      message.innerHTML = `
+        <p class='pseudo-envoi'>${element.emetteur}</p>
+        <p class='contenu'>${element.content}</p>
       <p class='date'>${element.date}</p>`;
     }else if (element.emeteur === chat_select && element.dest === pseudo){
       message.classList.add("recu");
@@ -98,8 +129,73 @@ socket.on('reception_message', (mes) => {
 
 // fonction salon qui permet d'afficher les messages d'un salon spécifique
 function salon(id) {
+
   // met à jour le titre du salon en cours
+
   salonEnCours.innerHTML = id;
+
+  // met à jour le nom du salon
+
+  document.getElementById('nom-salon').innerHTML = id;
+
+  // vide le contenu des messages
+  messages.innerHTML = '';
+
+  // boucle à travers les messages et crée un élément div pour chaque message
+  for(const contenu of lesMessages){
+  if(
+    (contenu.dest_id == id && id == 'general') ||
+    (contenu.emet_id == socket.id && contenu.dest_id == socket.id) ||
+    (contenu.emet_id == socket.id && contenu.dest_id == id)
+  ){
+    var div = document.createElement('div');
+    if(contenu.emet_id == socket.id){
+      div.setAttribute('class', 'message-emis');
+    }else{
+      div.setAttribute('class', 'message-recu');
+    }
+    div.innerHTML = contenu.contenu;
+    messages.appendChild(div);
+  }
+  function salon(id) {
+
+  // met à jour le titre du salon en cours
+
+  salonEnCours.innerHTML = id;
+
+  // met à jour le nom du salon
+
+  document.getElementById('nom-salon').innerHTML = id;
+
+  // vide le contenu des messages
+  messages.innerHTML = '';
+
+  // boucle à travers les messages et crée un élément div pour chaque message
+  for(const contenu of lesMessages){
+
+
+  if(
+    (contenu.dest_id == id && id == 'general') ||
+    (contenu.emet_id == socket.id && contenu.dest_id == socket.id) ||
+    (contenu.emet_id == socket.id && contenu.dest_id == id)
+  ){
+    var div = document.createElement('div');
+    if(contenu.emet_id == socket.id){
+      div.setAttribute('class', 'message-emis');
+    }else{
+      div.setAttribute('class', 'message-recu');
+    }
+    div.innerHTML = contenu.contenu;
+    messages.appendChild(div);
+  }
+}
+  }
+
+  // filtre les messages du salon spécifique
+  var messages = lesMessages.filter(function (m) {
+  return m.salon === id;
+  });
+  }
 
   // filtre les messages du salon spécifique
   var messages = lesMessages.filter(function (m) {
